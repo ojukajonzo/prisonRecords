@@ -7,14 +7,25 @@ from dashboard import DashboardWindow
 
 class LoginWindow:
     def __init__(self, root: tk.Tk):
+        """
+        Root login window for MIS MAIN.
+        This is the first panel the user sees when starting the system.
+        Closing this window should terminate the whole application.
+        """
         self.root = root
         self.root.title("MIS MAIN - Login")
-        self.root.geometry("350x220")
+        # Make the initial login window roughly twice the original size
+        self.root.geometry("700x440")
         self.root.resizable(False, False)
 
-        # Ensure DB exists before login
+        # Ensure DB exists before login so that authentication works reliably
         init_db()
 
+        # If the user clicks the window close (X) button on the login window,
+        # exit the entire application instead of leaving hidden windows behind.
+        self.root.protocol("WM_DELETE_WINDOW", self._on_close_requested)
+
+        # Build and render all login controls
         self._build_ui()
 
     def _build_ui(self):
@@ -47,9 +58,13 @@ class LoginWindow:
         login_btn = tk.Button(btn_frame, text="Login", width=10, command=self.handle_login)
         login_btn.pack(side="left", padx=5)
 
+        # Allow pressing Enter to trigger login for faster data entry
         self.root.bind("<Return>", lambda _event: self.handle_login())
 
     def handle_login(self):
+        """
+        Perform login validation, and open the dashboard when credentials are valid.
+        """
         username = self.entry_username.get().strip()
         password = self.entry_password.get().strip()
 
@@ -62,7 +77,7 @@ class LoginWindow:
             messagebox.showerror("Login Failed", "Invalid username or password.")
             return
 
-        # Open dashboard and hide login window
+        # Open main dashboard and hide the login window in case of future logout
         self.open_dashboard(user)
 
     def open_dashboard(self, user):
@@ -71,6 +86,13 @@ class LoginWindow:
         DashboardWindow(dash_window, user)
         # Hide login window but keep it in memory in case of logout
         self.root.withdraw()
+
+    def _on_close_requested(self):
+        """
+        Handle user clicking the X on the login window.
+        This should terminate the entire application session.
+        """
+        self.root.destroy()
 
 
 def run_login_app():

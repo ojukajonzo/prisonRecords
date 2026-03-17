@@ -1,20 +1,30 @@
 import tkinter as tk
 from tkinter import messagebox, ttk
 from typing import Optional
+from datetime import date
 
 from database import get_connection
 
 
 class VisitorFormWindow:
     def __init__(self, root: tk.Toplevel, user: dict):
+        """
+        Main visitor entry and history window.
+        Handles both creating/updating visitor bio data and recording visits.
+        """
         self.root = root
         self.user = user
         self.root.title("Visitor Registration and Search")
         self.root.geometry("900x500")
 
+        # Tracks the currently loaded visitor (if any)
         self.current_visitor_id: Optional[int] = None
 
         self._build_ui()
+
+        # Pre-fill the visit date with the current system date in ISO format (YYYY-MM-DD).
+        # The user can still change this value manually if needed.
+        self._set_today_date()
 
     def _build_ui(self):
         container = tk.Frame(self.root, padx=10, pady=10)
@@ -96,6 +106,14 @@ class VisitorFormWindow:
         entry = tk.Entry(parent, width=width)
         entry.grid(row=row, column=1, sticky="w", pady=2)
         return entry
+
+    def _set_today_date(self):
+        """
+        Set the visit date entry to the current system date.
+        """
+        today_str = date.today().isoformat()
+        self.entry_date.delete(0, "end")
+        self.entry_date.insert(0, today_str)
 
     def search_visitor(self):
         query = self.search_entry.get().strip()
@@ -181,14 +199,23 @@ class VisitorFormWindow:
 
     def clear_form(self):
         self.clear_visitor_only()
+        self._clear_visit_inputs()
+        self._clear_history()
+        self.current_visitor_id = None
+
+    def _clear_visit_inputs(self):
+        """
+        Clear only the visit-specific input fields (reason, times, date, etc.).
+        Visitor bio data and history remain for easier repeated entries.
+        """
         self.entry_reason.delete(0, "end")
         self.entry_person.delete(0, "end")
         self.entry_items.delete(0, "end")
         self.entry_time_in.delete(0, "end")
         self.entry_time_out.delete(0, "end")
         self.entry_date.delete(0, "end")
-        self._clear_history()
-        self.current_visitor_id = None
+        # After clearing, restore today's date to guide the operator
+        self._set_today_date()
 
     def save_visit(self):
         full_name = self.entry_full_name.get().strip()
@@ -282,3 +309,6 @@ class VisitorFormWindow:
 
         messagebox.showinfo("Saved", "Visit record saved successfully.")
 
+        # After saving, clear the visit input fields so the next record starts with a clean slate,
+        # but keep the visitor details and history visible for quick repeated visits.
+        self._clear_visit_inputs()
